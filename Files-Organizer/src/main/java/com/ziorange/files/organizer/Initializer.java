@@ -20,12 +20,14 @@ public class Initializer {
     private static final String ERROR_MESSAGE_READING_PROPERTIES = "Provide a valid location of the .properties file";
     private static final String READ_PATH_KEY = "read_path";
     private static final String EXPORT_PATH_KEY = "export_path";
+    private static final String IMAGE_RULE_KEY = "cp_only_for_image_dimensions_less_than";
     private static final String IMAGE_FILES_EXTENSIONS_KEY = "image_files_extensions";
     private static final String VIDEO_FILES_EXTENSIONS_KEY = "video_files_extension";
     private static String importPath;
     private static String exportPath;
     private static Set<String> imageExtensions;
     private static Set<String> videoExtensions;
+    private static String imageRule;
 
     /**
      * @param args the command line arguments
@@ -51,7 +53,7 @@ public class Initializer {
             initiateProcedure(prop);
         } catch (IOException ex) {
             Logger.getLogger(Initializer.class.getName()).log(Level.SEVERE, null, ex);
-        }       
+        }
     }
 
     private static void initiateProcedure(Properties prop) {
@@ -65,11 +67,16 @@ public class Initializer {
             System.out.println("Looking for files with video extensions " + videoExtensionString + " at  " + importPath);
             videoExtensions = new HashSet(Arrays.asList(videoExtensionString.split(",")));
         }
-        DiskAnalyzer analyzer = new DiskAnalyzer(importPath,imageExtensions, videoExtensions);
+        DiskAnalyzer analyzer = new DiskAnalyzer(importPath, imageExtensions, videoExtensions);
         try {
             Set<Path> foundResults = analyzer.scan();
-            FilesOrganizer filerOrganizer = new FilesOrganizer(exportPath);
-            for (Path pathFound : foundResults) {               
+            Integer imageRuleDimensions = null;
+            imageRule = prop.getProperty(IMAGE_RULE_KEY);
+            if(imageRule!=null && !imageRule.isEmpty()){
+                imageRuleDimensions = Integer.parseInt(imageRule);
+            }
+            FilesOrganizer filerOrganizer = new FilesOrganizer(exportPath, imageExtensions, videoExtensions,imageRuleDimensions);
+            for (Path pathFound : foundResults) {
                 filerOrganizer.migrateFile(pathFound);
             }
         } catch (IOException ex) {
